@@ -1,3 +1,6 @@
+# Production build
+dist/
+
 # Node dependencies
 node_modules/
 
@@ -17,4 +20,3 @@ yarn-error.log*
 .vscode/*
 !.vscode/extensions.json
 .idea/
-
