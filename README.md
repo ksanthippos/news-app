@@ -1,6 +1,6 @@
-# Uutiskoostaja
+# Uutisapuri
 
-Henkilökohtainen uutiskoostaja-PWA (Local-first).
+Henkilökohtainen uutisapuri-PWA (Local-first).
 
 ## Käynnistys paikallisesti
 

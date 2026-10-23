@@ -1,12 +1,12 @@
-name: Deploy Uutiskoostaja to GitHub Pages
+name: Deploy Uutisapuri to GitHub Pages
 
 on:
   push:
     branches:
       - main
   schedule:
-    # Päivitetään uutiset automaattisesti 2 tunnin välein
-    - cron: '0 */2 * * *'
+    # Päivitetään uutiset automaattisesti 1 tunnin välein
+    - cron: '0 * * * *'
   # Mahdollistaa käynnistyksen käsin GitHubin "Actions"-välilehdeltä
   workflow_dispatch:
 

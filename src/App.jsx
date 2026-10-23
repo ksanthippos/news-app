@@ -112,11 +112,11 @@ export default function App() {
   }, [newsMeta.updatedAt]);
 
   return (
-    <div className="app-shell">
+    <div className="app-shell"> 
       <header className="app-header">
         <div>
-          <div className="eyebrow">OMA UUTISVIRTA</div>
-          <h1>Uutiskoostaja</h1>
+          <div className="eyebrow">UUTISIA OMAAN MAKUUN</div>
+          <h1>Uutisapuri</h1>
         </div>
         <button
           className="settings-button"
