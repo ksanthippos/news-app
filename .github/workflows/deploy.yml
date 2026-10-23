@@ -5,8 +5,8 @@ on:
     branches:
       - main
   schedule:
-    # Päivitetään uutiset automaattisesti 1 tunnin välein
-    - cron: '0 * * * *'
+    # Päivitetään uutiset automaattisesti 1 tunnin välein (minuutti 15 välttää GitHubin ruuhkahuipun)
+    - cron: '15 * * * *'
   # Mahdollistaa käynnistyksen käsin GitHubin "Actions"-välilehdeltä
   workflow_dispatch:
 

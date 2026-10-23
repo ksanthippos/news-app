@@ -3,6 +3,7 @@ import { fetchNews } from "./api/news";
 import NewsCard from "./components/NewsCard";
 import CategoryBar from "./components/CategoryBar";
 import Settings from "./components/Settings";
+import PullToRefresh from "./components/PullToRefresh";
 
 const defaultSettings = {
   darkMode: false,
@@ -37,9 +38,11 @@ export default function App() {
   const [category, setCategory] = useState("Kaikki");
   const [showSettings, setShowSettings] = useState(false);
 
-  async function loadNews() {
+  async function loadNews(showFullLoader = false) {
     try {
-      setLoading(true);
+      if (showFullLoader) {
+        setLoading(true);
+      }
       setError("");
 
       const result = await fetchNews();
@@ -57,7 +60,24 @@ export default function App() {
   }
 
   useEffect(() => {
-    loadNews();
+    loadNews(true);
+  }, []);
+
+  // Päivitetään uutiset automaattisesti kun käyttäjä palaa puhelimessa appiin taustalta
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadNews(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {
@@ -112,88 +132,95 @@ export default function App() {
   }, [newsMeta.updatedAt]);
 
   return (
-    <div className="app-shell"> 
-      <header className="app-header">
-        <div>
-          <div className="eyebrow">UUTISIA OMAAN MAKUUN</div>
-          <h1>Uutisapuri</h1>
-        </div>
-        <button
-          className="settings-button"
-          onClick={() => setShowSettings((value) => !value)}
-          aria-label="Asetukset"
-        >
-          ⚙︎
-        </button>
-      </header>
+    <PullToRefresh onRefresh={() => loadNews(false)}>
+      <div className="app-shell">
+        <header className="app-header">
+          <div>
+            <div className="eyebrow">UUTISIA OMAAN MAKUUN</div>
+            <h1>Uutisapuri</h1>
+          </div>
+          <div className="header-actions">
+            <button
+              className={`refresh-button ${loading ? "spinning" : ""}`}
+              onClick={() => loadNews(true)}
+              aria-label="Päivitä uutiset"
+              title="Päivitä uutiset"
+            >
+              ↻
+            </button>
+            <button
+              className="settings-button"
+              onClick={() => setShowSettings((value) => !value)}
+              aria-label="Asetukset"
+            >
+              ⚙︎
+            </button>
+          </div>
+        </header>
 
-      {showSettings ? (
-        <Settings
-          settings={settings}
-          setSettings={setSettings}
-          onClose={() => setShowSettings(false)}
-        />
-      ) : (
-        <>
-          <section className="intro">
-            <h2>Tuoreimmat uutiset</h2>
-            <p>
-              {newsMeta.isFallback ? (
-                <span>Käytetään demodataa (aja <code>npm run fetch:news</code> ladataksesi tuoreet uutiset).</span>
-              ) : formattedUpdate ? (
-                <span>Päivitetty {formattedUpdate}</span>
-              ) : (
-                <span>Henkilökohtainen uutiskoostaja</span>
-              )}
-            </p>
-          </section>
-
-          <CategoryBar
-            categories={categories}
-            selected={category}
-            onSelect={setCategory}
+        {showSettings ? (
+          <Settings
+            settings={settings}
+            setSettings={setSettings}
+            onClose={() => setShowSettings(false)}
           />
+        ) : (
+          <>
+            <section className="intro">
+              <h2>Tuoreimmat uutiset</h2>
+              <p>
+                {newsMeta.isFallback ? (
+                  <span>
+                    Käytetään demodataa (aja <code>npm run fetch:news</code> ladataksesi tuoreet uutiset).
+                  </span>
+                ) : formattedUpdate ? (
+                  <span>Päivitetty {formattedUpdate}</span>
+                ) : (
+                  <span>Henkilökohtainen uutisapuri</span>
+                )}
+              </p>
+            </section>
 
-          <main className="news-list">
-            {loading && (
-              <div className="status-message">
-                Haetaan uutisia...
-              </div>
-            )}
+            <CategoryBar
+              categories={categories}
+              selected={category}
+              onSelect={setCategory}
+            />
 
-            {error && (
-              <div className="status-message error">
-                {error}
-              </div>
-            )}
+            <main className="news-list">
+              {loading && news.length === 0 && (
+                <div className="status-message">Haetaan uutisia...</div>
+              )}
 
-            {!loading &&
-              !error &&
-              visibleNews.map((article) => (
-                <NewsCard
-                  key={article.id}
-                  article={article}
-                  favorite={favorites.includes(article.id)}
-                  onFavorite={toggleFavorite}
-                />
-              ))}
+              {error && <div className="status-message error">{error}</div>}
 
-            {!loading && !error && visibleNews.length === 0 && (
-              <div className="status-message">
-                {category === "★ Suosikit"
-                  ? "Ei vielä suosikeiksi merkittyjä uutisia. Napauta kortin tähteä tallentaaksesi uutisen lukulistalle!"
-                  : "Ei uutisia valituilla suodattimilla."}
-              </div>
-            )}
-          </main>
+              {!error &&
+                visibleNews.map((article) => (
+                  <NewsCard
+                    key={article.id}
+                    article={article}
+                    favorite={favorites.includes(article.id)}
+                    onFavorite={toggleFavorite}
+                  />
+                ))}
 
-          <footer>
-            <span>Local-first PWA</span>
-            <span>·</span>
-            <span>{visibleNews.length} uutista</span>
-          </footer>
-        </>
-      )}
-    </div>
+              {!loading && !error && visibleNews.length === 0 && (
+                <div className="status-message">
+                  {category === "★ Suosikit"
+                    ? "Ei vielä suosikeiksi merkittyjä uutisia. Napauta kortin tähteä tallentaaksesi uutisen lukulistalle!"
+                    : "Ei uutisia valituilla suodattimilla."}
+                </div>
+              )}
+            </main>
+
+            <footer>
+              <span>Local-first PWA</span>
+              <span>·</span>
+              <span>{visibleNews.length} uutista</span>
+            </footer>
+          </>
+        )}
+      </div>
+    </PullToRefresh>
   );
 }

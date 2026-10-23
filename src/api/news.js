@@ -8,9 +8,16 @@ export async function fetchNews() {
   try {
     const basePath = import.meta.env.BASE_URL || "/";
     const normalizedBase = basePath.endsWith("/") ? basePath : `${basePath}/`;
+    // Aikaleima ja cache: no-store estävät mobiiliselaimia tarjoilemasta vanhaa välimuistia
     const url = `${normalizedBase}news.json?t=${Date.now()}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache"
+      }
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -39,4 +46,3 @@ export async function fetchNews() {
     };
   }
 }
-

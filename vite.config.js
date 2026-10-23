@@ -7,7 +7,32 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: [
+        "favicon.svg",
+        "apple-touch-icon.png",
+        "pwa-192x192.png",
+        "pwa-512x512.png"
+      ],
+      workbox: {
+        runtimeCaching: [
+          {
+            // Varmistetaan että news.json haetaan aina ensisijaisesti verkosta tuoreena
+            urlPattern: ({ url }) => url.pathname.endsWith("news.json"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "news-json-cache",
+              networkTimeoutSeconds: 3,
+              expiration: {
+                maxEntries: 1,
+                maxAgeSeconds: 24 * 60 * 60
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
+      },
       manifest: {
         name: "Uutisapuri",
         short_name: "Uutisapuri",
