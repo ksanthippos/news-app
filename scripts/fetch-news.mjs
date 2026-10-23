@@ -13,21 +13,32 @@ const FEEDS = [
     url: "https://yle.fi/rss/uutiset/tuoreimmat",
     language: "fi",
     defaultCategory: "Kotimaa",
-    maxItems: 12
+    maxItems: 10,
+    fetchOgImageIfMissing: true
+  },
+  {
+    name: "Ilta-Sanomat",
+    url: "https://www.is.fi/rss/tuoreimmat.xml",
+    language: "fi",
+    defaultCategory: "Uutiset",
+    maxItems: 8,
+    fetchOgImageIfMissing: false
   },
   {
     name: "BBC Technology",
     url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
     language: "en",
     defaultCategory: "Technology",
-    maxItems: 8
+    maxItems: 6,
+    fetchOgImageIfMissing: false
   },
   {
     name: "BBC Science",
     url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
     language: "en",
     defaultCategory: "Science",
-    maxItems: 6
+    maxItems: 6,
+    fetchOgImageIfMissing: false
   }
 ];
 
@@ -56,6 +67,48 @@ function stripHtml(html) {
     .trim();
 }
 
+function extractImageUrl(itemXml) {
+  // 1. media:thumbnail
+  const thumbMatch = itemXml.match(/<media:thumbnail[^>]+url=["']([^"']+)["']/i);
+  if (thumbMatch) return thumbMatch[1];
+
+  // 2. enclosure (usein Ilta-Sanomat, HS ym.)
+  const enclosureMatch =
+    itemXml.match(/<enclosure[^>]+url=["']([^"']+)["'][^>]*type=["']image\/[^"']+["']/i) ||
+    itemXml.match(/<enclosure[^>]+url=["']([^"']+)["']/i);
+  if (enclosureMatch) return enclosureMatch[1];
+
+  // 3. media:content
+  const mediaContentMatch = itemXml.match(/<media:content[^>]+url=["']([^"']+)["']/i);
+  if (mediaContentMatch) return mediaContentMatch[1];
+
+  // 4. <img> tagi
+  const imgMatch = itemXml.match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (imgMatch) return imgMatch[1];
+
+  return null;
+}
+
+async function fetchOgImage(url) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      },
+      signal: AbortSignal.timeout(3500)
+    });
+    if (!res.ok) return null;
+    const html = await res.text();
+    const match =
+      html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) ||
+      html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
 function parseRssXml(xmlText, feedConfig) {
   const items = [];
   const itemMatches = xmlText.match(/<item[\s\S]*?<\/item>/gi) || [];
@@ -78,9 +131,12 @@ function parseRssXml(xmlText, feedConfig) {
     const rawLink = getTag("link");
     const linkMatch = itemXml.match(/<link[^>]*>([^<\s]+)/i);
     const link = rawLink || (linkMatch ? linkMatch[1].trim() : "");
-    const description = stripHtml(getTag("description"));
+    const description = stripHtml(
+      getTag("description") || getTag("content:encoded") || getTag("summary")
+    );
     const guid = stripHtml(getTag("guid")) || link;
     const pubDateStr = getTag("pubDate");
+    const imageUrl = extractImageUrl(itemXml);
 
     if (!title || !link) continue;
 
@@ -92,8 +148,6 @@ function parseRssXml(xmlText, feedConfig) {
       }
     }
 
-    // Yle käyttää usein kategoriaa "Kotimaa", "Ulkomaat", "Talous", "Politiikka" jne.
-    // Otetaan ensimmäinen kuvaava kategoria tai oletus
     const category = categoryMatches[0] || feedConfig.defaultCategory || "Uutiset";
 
     items.push({
@@ -104,7 +158,8 @@ function parseRssXml(xmlText, feedConfig) {
       language: feedConfig.language,
       category,
       published,
-      url: link
+      url: link,
+      imageUrl: imageUrl || null
     });
 
     if (items.length >= feedConfig.maxItems) {
@@ -132,7 +187,20 @@ async function fetchFeed(feedConfig) {
 
     const xml = await res.text();
     const articles = parseRssXml(xml, feedConfig);
-    console.log(`✓ ${feedConfig.name}: saatiin ${articles.length} uutista`);
+
+    // Jos syötteessä ei ollut suoria kuvatunnisteita (kuten Yle), haetaan og:image rinnakkain
+    if (feedConfig.fetchOgImageIfMissing) {
+      const enrichPromises = articles.map(async (art) => {
+        if (!art.imageUrl) {
+          art.imageUrl = await fetchOgImage(art.url);
+        }
+      });
+      await Promise.all(enrichPromises);
+    }
+
+    console.log(
+      `✓ ${feedConfig.name}: saatiin ${articles.length} uutista (${articles.filter((a) => a.imageUrl).length} kuvalla)`
+    );
     return articles;
   } catch (err) {
     console.warn(`Virhe haettaessa syötettä ${feedConfig.name}:`, err.message);
@@ -163,7 +231,10 @@ async function main() {
   await fs.mkdir(path.dirname(outputFile), { recursive: true });
   await fs.writeFile(outputFile, JSON.stringify(output, null, 2), "utf8");
 
-  console.log(`\nValmis! Tallennettu ${allArticles.length} uutista tiedostoon:`);
+  const withImages = allArticles.filter((a) => a.imageUrl).length;
+  console.log(
+    `\nValmis! Tallennettu ${allArticles.length} uutista (joista ${withImages} sisältää kuvan) tiedostoon:`
+  );
   console.log(`→ ${outputFile}`);
 }
 

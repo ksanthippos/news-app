@@ -74,16 +74,24 @@ export default function App() {
 
   const categories = useMemo(() => {
     const values = new Set(news.map((article) => article.category).filter(Boolean));
-    return ["Kaikki", ...values];
-  }, [news]);
+    const list = ["Kaikki"];
+    if (favorites.length > 0 || category === "★ Suosikit") {
+      list.push("★ Suosikit");
+    }
+    return [...list, ...values];
+  }, [news, favorites.length, category]);
 
   const visibleNews = useMemo(() => {
     return news.filter((article) => {
+      const isFav = favorites.includes(article.id);
+      if (category === "★ Suosikit") {
+        return isFav;
+      }
       const languageOk = settings.languages.includes(article.language);
       const categoryOk = category === "Kaikki" || article.category === category;
       return languageOk && categoryOk;
     });
-  }, [news, category, settings.languages]);
+  }, [news, category, settings.languages, favorites]);
 
   const toggleFavorite = (id) => {
     setFavorites((current) =>
@@ -172,7 +180,9 @@ export default function App() {
 
             {!loading && !error && visibleNews.length === 0 && (
               <div className="status-message">
-                Ei uutisia valituilla suodattimilla.
+                {category === "★ Suosikit"
+                  ? "Ei vielä suosikeiksi merkittyjä uutisia. Napauta kortin tähteä tallentaaksesi uutisen lukulistalle!"
+                  : "Ei uutisia valituilla suodattimilla."}
               </div>
             )}
           </main>
