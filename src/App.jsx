@@ -65,20 +65,23 @@ export default function App() {
   const [category, setCategory] = useState("Kaikki");
   const [showReadInFeed, setShowReadInFeed] = useState(false);
 
-  // Uutisten lataus
-  async function loadNews(showFullLoader = false) {
+  // Uutisten lataus (tukee nopeaa staattista latausta ja reaaliaikaista live-hakua selaimesta)
+  async function loadNews({ showFullLoader = false, live = true } = {}) {
     try {
       if (showFullLoader) {
         setLoading(true);
       }
       setError("");
 
-      const result = await fetchNews();
-      setNews(result.articles);
-      setNewsMeta({
-        updatedAt: result.updatedAt,
-        isFallback: result.isFallback
-      });
+      const result = await fetchNews({ live, existingArticles: news });
+      if (result && Array.isArray(result.articles)) {
+        setNews(result.articles);
+        setNewsMeta({
+          updatedAt: result.updatedAt,
+          isFallback: result.isFallback,
+          isLive: Boolean(result.isLive)
+        });
+      }
       return result;
     } catch (err) {
       console.error(err);
@@ -88,17 +91,74 @@ export default function App() {
     }
   }
 
-  // Ensilataus
+  // Ensilataus: nopea avaus välimuistista/tiedostosta + automaattinen taustalataus livenä
   useEffect(() => {
-    loadNews(true);
+    let isMounted = true;
+
+    async function init() {
+      // 1. Nopea alkulataus
+      const initial = await fetchNews({ live: false });
+      if (!isMounted) return;
+      if (initial && initial.articles) {
+        setNews(initial.articles);
+        setNewsMeta({
+          updatedAt: initial.updatedAt,
+          isFallback: initial.isFallback,
+          isLive: Boolean(initial.isLive)
+        });
+        setLoading(false);
+      }
+
+      // 2. Haetaan heti perään tuoreet uutiset livenä RSS-lähteistä
+      try {
+        const liveResult = await fetchNews({
+          live: true,
+          existingArticles: initial?.articles || []
+        });
+        if (!isMounted) return;
+        if (liveResult && liveResult.articles) {
+          setNews(liveResult.articles);
+          setNewsMeta({
+            updatedAt: liveResult.updatedAt,
+            isFallback: liveResult.isFallback,
+            isLive: true
+          });
+        }
+      } catch (err) {
+        console.warn("Live-nouto alussa epäonnistui:", err);
+      }
+    }
+
+    init();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Automaattipäivitys kun käyttäjä palaa puhelimessa appiin
+  // Automaattipäivitys 1 tunnin välein
+  useEffect(() => {
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const interval = setInterval(() => {
+      loadNews({ showFullLoader: false, live: true });
+    }, ONE_HOUR_MS);
+
+    return () => clearInterval(interval);
+  }, [news]);
+
+  // Automaattipäivitys kun käyttäjä palaa sovellukseen mobiilissa
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        loadNews(false);
         setReadHistory(loadReadHistory());
+
+        // Päivitetään livenä jos edellisestä päivityksestä on yli 15 minuuttia
+        const lastUpdated = newsMeta.updatedAt
+          ? new Date(newsMeta.updatedAt).getTime()
+          : 0;
+        const now = Date.now();
+        if (now - lastUpdated > 15 * 60 * 1000) {
+          loadNews({ showFullLoader: false, live: true });
+        }
       }
     };
 
@@ -109,7 +169,7 @@ export default function App() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("focus", handleVisibilityChange);
     };
-  }, []);
+  }, [newsMeta.updatedAt, news]);
 
   // Tallennukset localStorageen
   useEffect(() => {
@@ -234,7 +294,7 @@ export default function App() {
 
   return (
     <>
-      <PullToRefresh onRefresh={() => loadNews(false)}>
+      <PullToRefresh onRefresh={() => loadNews({ showFullLoader: false, live: true })}>
       <div className="app-shell">
         <header className="app-header">
           <div className="brand-group" onClick={() => setActiveTab("home")}>
@@ -253,7 +313,7 @@ export default function App() {
             {/* Manuaalinen päivityspainike */}
             <button
               className={`refresh-button ${loading ? "spinning" : ""}`}
-              onClick={() => loadNews(true)}
+              onClick={() => loadNews({ showFullLoader: true, live: true })}
               aria-label="Päivitä uutiset"
               title="Päivitä uutiset"
               type="button"
