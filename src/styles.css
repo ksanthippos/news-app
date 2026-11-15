@@ -153,15 +153,17 @@ h1 {
   bottom: 0;
   left: 0;
   right: 0;
-  z-index: 999;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  z-index: 9999;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 0, 0, 0.09);
   padding: 8px 16px max(10px, env(safe-area-inset-bottom));
   justify-content: space-around;
   align-items: center;
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.08);
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .bottom-nav-item {
@@ -653,6 +655,155 @@ h1 {
 }
 
 /* =========================================================
+   VERSIOHISTORIA ASETUKSISSA
+   ========================================================= */
+.version-group {
+  user-select: none;
+}
+
+.version-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  border-radius: 8px;
+  transition: opacity 0.15s ease;
+}
+
+.version-header-row:hover {
+  opacity: 0.85;
+}
+
+.version-arrow {
+  font-size: 1.25rem;
+  line-height: 1;
+  opacity: 0.5;
+  transition: transform 0.2s ease;
+}
+
+.version-arrow.open {
+  transform: rotate(180deg);
+}
+
+.version-history-container {
+  margin-top: 14px;
+  animation: fadeIn 0.2s ease;
+}
+
+.version-history-list {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.version-history-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.version-history-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.version-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: background 0.12s ease;
+}
+
+.version-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.version-badge {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.version-date {
+  font-size: 0.74rem;
+  opacity: 0.6;
+}
+
+.version-text {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  opacity: 0.85;
+}
+
+/* =========================================================
+   LEIJUVA ALKUUN -NAPPI (SCROLL TO TOP)
+   ========================================================= */
+.scroll-to-top {
+  position: fixed;
+  bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+  right: 18px;
+  z-index: 900;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(14px) scale(0.92);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), background 0.15s ease;
+  user-select: none;
+}
+
+.scroll-to-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.scroll-to-top:hover {
+  background: #0f172a;
+  transform: translateY(-2px) scale(1.03);
+}
+
+.scroll-to-top:active {
+  transform: scale(0.95);
+}
+
+.scroll-to-top-icon {
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+@media (min-width: 700px) {
+  .scroll-to-top {
+    bottom: 26px;
+    right: 28px;
+    padding: 9px 16px;
+    font-size: 0.86rem;
+  }
+}
+
+/* =========================================================
    TYHJÄT TILAT JA ILMOITUKSET
    ========================================================= */
 .status-message {
@@ -828,6 +979,30 @@ footer {
   background: #2d2d2d;
 }
 
+.dark .scroll-to-top {
+  background: rgba(30, 41, 59, 0.94);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
+}
+
+.dark .scroll-to-top:hover {
+  background: #334155;
+}
+
+.dark .version-item {
+  background: #1b1b1b;
+  border-color: #303030;
+}
+
+.dark .version-badge {
+  color: #60a5fa;
+}
+
+.dark .version-history-list::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
 /* =========================================================
    RESPONSIIVISUUS
    ========================================================= */
@@ -841,7 +1016,7 @@ footer {
   }
 
   .mobile-bottom-nav {
-    display: none;
+    display: none !important;
   }
 
   .news-list {

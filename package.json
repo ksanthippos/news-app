@@ -1,13 +1,15 @@
 {
   "name": "uutisapuri",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.09.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "fetch:news": "node scripts/fetch-news.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "commit": "node scripts/commit.mjs",
+    "push": "node scripts/commit.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.4",

@@ -3,8 +3,9 @@ import { fetchNews } from "./api/news";
 import NewsCard from "./components/NewsCard";
 import CategoryBar from "./components/CategoryBar";
 import Settings from "./components/Settings";
-import Navigation from "./components/Navigation";
+import { DesktopNav, MobileBottomNav } from "./components/Navigation";
 import PullToRefresh from "./components/PullToRefresh";
+import ScrollToTop from "./components/ScrollToTop";
 import {
   loadReadHistory,
   markArticleRead,
@@ -232,7 +233,8 @@ export default function App() {
   const readCount = useMemo(() => getReadCount(readHistory), [readHistory]);
 
   return (
-    <PullToRefresh onRefresh={() => loadNews(false)}>
+    <>
+      <PullToRefresh onRefresh={() => loadNews(false)}>
       <div className="app-shell">
         <header className="app-header">
           <div className="brand-group" onClick={() => setActiveTab("home")}>
@@ -241,8 +243,8 @@ export default function App() {
           </div>
 
           <div className="header-actions">
-            {/* Työpöytänäkymän ylävalikko */}
-            <Navigation
+            {/* Työpöytänäkymän ylävalikko (näytetään näytöillä >= 700px) */}
+            <DesktopNav
               activeTab={activeTab}
               onSelectTab={setActiveTab}
               favoritesCount={favorites.length}
@@ -406,5 +408,16 @@ export default function App() {
         )}
       </div>
     </PullToRefresh>
-  );
+
+      {/* Leijuva Alkuun-nappi sivua alas rullattaessa */}
+      <ScrollToTop />
+
+      {/* Mobiilin alavalintanauha AINA kiinteästi ruudun alalaidassa (riippumaton vierityksestä) */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        favoritesCount={favorites.length}
+      />
+  </>
+);
 }

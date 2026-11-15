@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { APP_VERSION, VERSION_HISTORY } from "../config";
+
 export default function Settings({
   settings,
   setSettings,
@@ -5,6 +8,8 @@ export default function Settings({
   onClearReadHistory,
   onBackToHome
 }) {
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+
   const toggleLanguage = (language) => {
     setSettings((current) => ({
       ...current,
@@ -140,6 +145,51 @@ export default function Settings({
         </label>
       </div>
 
+      {/* Versiohistoria */}
+      <div className="setting-group version-group">
+        <div
+          className="version-header-row"
+          onClick={() => setShowVersionHistory((v) => !v)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setShowVersionHistory((v) => !v);
+            }
+          }}
+          aria-expanded={showVersionHistory}
+        >
+          <div>
+            <h3>Versiohistoria (v{APP_VERSION})</h3>
+            <p className="muted" style={{ margin: 0 }}>
+              {showVersionHistory
+                ? "Napauta sulkeaksesi luettelon"
+                : "Napauta nähdäksesi julkaistut versiot ja commitit"}
+            </p>
+          </div>
+          <span className={`version-arrow ${showVersionHistory ? "open" : ""}`}>
+            ▾
+          </span>
+        </div>
+
+        {showVersionHistory && (
+          <div className="version-history-container">
+            <div className="version-history-list" role="region" aria-label="Versioluettelo">
+              {VERSION_HISTORY.map((item) => (
+                <div key={item.version} className="version-item">
+                  <div className="version-item-header">
+                    <span className="version-badge">Versio {item.version}</span>
+                    {item.date && <span className="version-date">{item.date}</span>}
+                  </div>
+                  <p className="version-text">-- {item.message} --</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Ilmoitukset */}
       <div className="setting-group">
         <h3>Ilmoitukset</h3>
@@ -159,7 +209,7 @@ export default function Settings({
       </div>
 
       <div className="settings-footer-info">
-        <p>Uutisapuri v0.3.0 · Local-first PWA</p>
+        <p>Uutisapuri v{APP_VERSION} · Local-first PWA</p>
       </div>
     </section>
   );

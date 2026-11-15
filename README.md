@@ -23,6 +23,19 @@ Avaa selaimessa Viten ilmoittama osoite (esim. `http://localhost:5173`).
 
 ---
 
+## Automaattiset commitit ja versionumerointi
+
+Projektissa on automaattinen versiointi- ja julkaisukomento:
+```bash
+npm run commit "Kuvaus muutoksista"
+```
+Tämä komento:
+1. Kasvattaa automaattisesti versionumeroa 0.01:llä (alkoi numerosta `1.09` → `1.10` jne.).
+2. Tallentaa versionumeron ja commit-viestin tiedostoon [`src/config.js`](src/config.js) ja [`config.js`](config.js).
+3. Suorittaa `git add .`, tekee commitin (`Versio X.XX: ...`) ja puskee automaattisesti GitHubiin (`git push`).
+
+---
+
 ## Ominaisuudet ja arkkitehtuuri
 
 1. **Uutisvirta ja lähteet:**
@@ -38,19 +51,25 @@ Avaa selaimessa Viten ilmoittama osoite (esim. `http://localhost:5173`).
 
 3. **Responsiivinen navigaatio:**
    - **Työpöytänäkymä (≥ 700px):** Ylävalikko otsikon vieressä (1. Koti, 2. Suosikit, 3. Asetukset).
-   - **Mobiilinäkymä (< 700px):** Alavalintanauha ruudun alareunassa: **Suosikit (vasemmalla) · Koti (keskellä) · Asetukset (oikealla)** safe-area-tuella.
+   - **Mobiilinäkymä (< 700px):** Kiinteä alavalintanauha ruudun alareunassa: **Suosikit (vasemmalla) · Koti (keskellä) · Asetukset (oikealla)** safe-area-tuella.
 
-4. **Pull-to-refresh & manuaalipäivitys:**
+4. **Leijuva "Alkuun"-nappi:**
+   - Kun uutislistaa rullataan alas (> 280px), oikeaan alakulmaan ilmestyy huomaamaton, leijuva `↑ Alkuun` -painike, jolla pääsee yhdellä napautuksella sivun huipulle.
+
+5. **Pull-to-refresh & manuaalipäivitys:**
    - Vedä etusivua alaspäin päivittääksesi uutiset milloin tahansa mobiilissa.
    - Nopea `↻`-päivityspainike yläpalkissa.
    - Automaattinen uutisten tarkistus aina kun sovellukseen palataan taustalta.
 
-5. **Teemat:**
+6. **Versiohistoria Asetuksissa:**
+   - Asetukset-näkymässä on avattava ja skrollattava versioluettelo (esim. `Versio 1.09: -- commitin kuvaus --`), josta näkee kaikkien aiempien julkaisujen sisällön.
+
+7. **Teemat:**
    - **Järjestelmä (Auto)** – mukautuu puhelimen / käyttöjärjestelmän tummaan tai vaaleaan tilaan reaaliajassa.
    - **Vaalea**
    - **Tumma**
 
-6. **PWA & Offline:**
+8. **PWA & Offline:**
    - Asennettavissa kotivalikkoon Androidilla, iOS:lla ja tietokoneella.
    - Offline-tuki Service Workerin avulla.
 
