@@ -1,4 +1,10 @@
-export default function NewsCard({ article, favorite, onFavorite }) {
+export default function NewsCard({
+  article,
+  favorite,
+  onFavorite,
+  isRead = false,
+  onRead
+}) {
   const time = new Date(article.published).toLocaleString("fi-FI", {
     day: "numeric",
     month: "numeric",
@@ -6,14 +12,21 @@ export default function NewsCard({ article, favorite, onFavorite }) {
     minute: "2-digit"
   });
 
+  const openArticle = () => {
+    if (onRead) {
+      onRead(article);
+    }
+    if (article.url) {
+      window.open(article.url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   const handleCardClick = (e) => {
     // Älä avaa juttua jos klikataan suoraan suosikkitähteä tai linkkiä
     if (e.target.closest(".favorite-button") || e.target.closest("a")) {
       return;
     }
-    if (article.url) {
-      window.open(article.url, "_blank", "noopener,noreferrer");
-    }
+    openArticle();
   };
 
   const handleKeyDown = (e) => {
@@ -22,15 +35,13 @@ export default function NewsCard({ article, favorite, onFavorite }) {
         return;
       }
       e.preventDefault();
-      if (article.url) {
-        window.open(article.url, "_blank", "noopener,noreferrer");
-      }
+      openArticle();
     }
   };
 
   return (
     <article
-      className="news-card"
+      className={`news-card ${isRead ? "is-read" : ""}`}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -52,7 +63,10 @@ export default function NewsCard({ article, favorite, onFavorite }) {
       )}
 
       <div className="news-card-top">
-        <span className="category">{article.category}</span>
+        <div className="category-and-status">
+          <span className="category">{article.category}</span>
+          {isRead && <span className="read-badge">✓ Luettu</span>}
+        </div>
         <button
           className={`favorite-button ${favorite ? "active" : ""}`}
           onClick={(e) => {
@@ -61,6 +75,7 @@ export default function NewsCard({ article, favorite, onFavorite }) {
           }}
           aria-label={favorite ? "Poista suosikeista" : "Lisää suosikkeihin"}
           title={favorite ? "Poista suosikeista" : "Lisää suosikkeihin"}
+          type="button"
         >
           {favorite ? "★" : "☆"}
         </button>
@@ -79,7 +94,10 @@ export default function NewsCard({ article, favorite, onFavorite }) {
         href={article.url}
         target="_blank"
         rel="noreferrer"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onRead) onRead(article);
+        }}
       >
         Lue alkuperäinen juttu →
       </a>

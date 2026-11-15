@@ -13,7 +13,7 @@ const FEEDS = [
     url: "https://yle.fi/rss/uutiset/tuoreimmat",
     language: "fi",
     defaultCategory: "Kotimaa",
-    maxItems: 10,
+    maxItems: 14,
     fetchOgImageIfMissing: true
   },
   {
@@ -21,7 +21,7 @@ const FEEDS = [
     url: "https://www.is.fi/rss/tuoreimmat.xml",
     language: "fi",
     defaultCategory: "Uutiset",
-    maxItems: 8,
+    maxItems: 14,
     fetchOgImageIfMissing: false
   },
   {
@@ -29,7 +29,7 @@ const FEEDS = [
     url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
     language: "en",
     defaultCategory: "Technology",
-    maxItems: 6,
+    maxItems: 8,
     fetchOgImageIfMissing: false
   },
   {
@@ -37,7 +37,7 @@ const FEEDS = [
     url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
     language: "en",
     defaultCategory: "Science",
-    maxItems: 6,
+    maxItems: 8,
     fetchOgImageIfMissing: false
   }
 ];
@@ -175,7 +175,7 @@ async function fetchFeed(feedConfig) {
     console.log(`Haetaan syöte: ${feedConfig.name} (${feedConfig.url})...`);
     const res = await fetch(feedConfig.url, {
       headers: {
-        "User-Agent": "Uutiskoostaja/1.0 (+https://github.com/)"
+        "User-Agent": "Uutisapuri/1.0 (+https://github.com/)"
       },
       signal: AbortSignal.timeout(10000)
     });
@@ -208,32 +208,119 @@ async function fetchFeed(feedConfig) {
   }
 }
 
+/**
+ * Normalisoi otsikon sanoiksi duplikaattitarkastusta varten
+ */
+function extractTitleKeywords(title, language) {
+  const clean = title
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\b(katso|lue|tässä|näkökulma|analyysi|kommentti|yle|is|suora|lähetys|video|live)\b/gi, "")
+    .replace(/\b(the|and|for|with|from|that|this|what|how|why|are|was|were|has|have|had|new|says|after)\b/gi, "");
+
+  const words = clean
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length >= 3);
+
+  return new Set(words);
+}
+
+/**
+ * Tarkistaa ovatko kaksi uutista samasta aiheesta (eri lähteistä)
+ */
+function areDuplicates(a, b) {
+  if (a.url === b.url) return true;
+  if (a.language !== b.language) return false;
+
+  const setA = extractTitleKeywords(a.title, a.language);
+  const setB = extractTitleKeywords(b.title, b.language);
+
+  if (setA.size === 0 || setB.size === 0) return false;
+
+  let common = 0;
+  for (const word of setA) {
+    if (setB.has(word)) common++;
+  }
+
+  // Jaccard similarity & subset overlap
+  const jaccard = common / (setA.size + setB.size - common);
+  const minOverlap = common / Math.min(setA.size, setB.size);
+
+  // Jos sanastosta vähintään puolet täsmää tai pienempi otsikko sisältyy lähes täysin
+  return jaccard >= 0.45 || (common >= 3 && minOverlap >= 0.65);
+}
+
+/**
+ * Yhdistää duplikaatit eri lähteistä ja karsii liian vanhat uutiset
+ */
+function deduplicateAndFilter(articles) {
+  const FOUR_DAYS_MS = 4 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  // Karsitaan yli 4 päivää vanhat uutiset, jos uudempiakin on tarjolla
+  const freshArticles = articles.filter((art) => {
+    const age = now - new Date(art.published).getTime();
+    return age < FOUR_DAYS_MS;
+  });
+
+  const sourceArticles = freshArticles.length >= 10 ? freshArticles : articles;
+  const uniqueList = [];
+
+  for (const article of sourceArticles) {
+    const existingIndex = uniqueList.findIndex((item) => areDuplicates(item, article));
+
+    if (existingIndex === -1) {
+      uniqueList.push(article);
+    } else {
+      // Duplikaatti löytyi!
+      const existing = uniqueList[existingIndex];
+      console.log(`  → Yhdistettiin duplikaatti: "${article.title}" ⟷ "${existing.title}"`);
+
+      // Pidetään kuva jos toiselta puuttui
+      if (!existing.imageUrl && article.imageUrl) {
+        existing.imageUrl = article.imageUrl;
+      }
+
+      // Merkitään molemmat lähteet näkyviin
+      if (!existing.source.includes(article.source)) {
+        existing.source = `${existing.source} & ${article.source}`;
+      }
+    }
+  }
+
+  return uniqueList;
+}
+
 async function main() {
   console.log("Aloitetaan uutisten nouto RSS-syötteistä...");
 
   const results = await Promise.all(FEEDS.map(fetchFeed));
-  const allArticles = results.flat();
+  const rawArticles = results.flat();
 
-  // Järjestetään tuorein ensin
-  allArticles.sort((a, b) => new Date(b.published) - new Date(a.published));
+  // Järjestetään tuorein ensin ennen duplikaattikarsintaa
+  rawArticles.sort((a, b) => new Date(b.published) - new Date(a.published));
 
-  if (allArticles.length === 0) {
-    console.error("Uutisia ei saatu noudettua yhdestäkään syötteestä.");
+  console.log(`\nKarsitaan duplikaatit ja vanhentuneet jutut (${rawArticles.length} kpl)...`);
+  const uniqueArticles = deduplicateAndFilter(rawArticles);
+
+  if (uniqueArticles.length === 0) {
+    console.error("Uutisia ei saatu noudettua.");
     process.exit(1);
   }
 
   const output = {
     updatedAt: new Date().toISOString(),
-    total: allArticles.length,
-    articles: allArticles
+    total: uniqueArticles.length,
+    articles: uniqueArticles
   };
 
   await fs.mkdir(path.dirname(outputFile), { recursive: true });
   await fs.writeFile(outputFile, JSON.stringify(output, null, 2), "utf8");
 
-  const withImages = allArticles.filter((a) => a.imageUrl).length;
+  const withImages = uniqueArticles.filter((a) => a.imageUrl).length;
   console.log(
-    `\nValmis! Tallennettu ${allArticles.length} uutista (joista ${withImages} sisältää kuvan) tiedostoon:`
+    `\nValmis! Tallennettu ${uniqueArticles.length} uniikkia uutista (joista ${withImages} sisältää kuvan) tiedostoon:`
   );
   console.log(`→ ${outputFile}`);
 }

@@ -23,66 +23,41 @@ Avaa selaimessa Viten ilmoittama osoite (esim. `http://localhost:5173`).
 
 ---
 
-## Uutisten haku ja arkkitehtuuri
+## Ominaisuudet ja arkkitehtuuri
 
-Sovellus käyttää **staattista taustahakua (Local-first)**:
-1. Skripti [`scripts/fetch-news.mjs`](scripts/fetch-news.mjs) hakee uutiset RSS-syötteistä (mm. Yle Uutiset ja BBC).
-2. Skripti jäsentää XML:n, normalisoi kategoriat ja tallentaa tuoreet uutiset tiedostoon [`public/news.json`](public/news.json).
-3. React-sovellus ([`src/App.jsx`](src/App.jsx)) lataa uutiset suoraan `news.json`-tiedostosta. Mikäli tiedostoa ei löydy, käytetään varalla demodataa ([`src/data/demoNews.js`](src/data/demoNews.js)).
-4. Tämän ansiosta sovellus:
-   - Latautuu välittömästi ilman ulkoisia API-viiveitä.
-   - Välttää kaikki selaimen CORS- ja rate-limit -ongelmat.
-   - Toimii täysin offline-tilassa Service Workerin avulla.
+1. **Uutisvirta ja lähteet:**
+   - Hakee uutisia Yleltä, Ilta-Sanomilta ja BBC:ltä (`scripts/fetch-news.mjs`).
+   - Automaattinen **ristiinduplikoinnin poisto**: jos Yle ja IS raportoivat samasta aiheesta, ne yhdistetään yhdeksi uutiskortiksi molempien lähteiden maininnalla.
+   - Vanhentuneet (yli 4 päivää vanhat) uutiset karsiutuvat automaattisesti.
 
-Voit lisätä uusia RSS-syötteitä helposti muokkaamalla `FEEDS`-taulukkoa tiedostossa [`scripts/fetch-news.mjs`](scripts/fetch-news.mjs).
+2. **Luettujen uutisten seuranta (7 päivän rullaava historia):**
+   - Pitää kirjaa klikatuista uutisista `localStorage`-muistissa viikon ajalta.
+   - Luetut uutiset piilotetaan automaattisesti etusivulta, jotta uutisvirta pysyy tuoreena.
+   - Tähdellä merkityt suosikit säilyvät aina tallessa.
+   - Mahdollisuus näyttää piilotetut luetut uutiset tai tyhjentää lukuhistoria Asetuksissa.
 
----
+3. **Responsiivinen navigaatio:**
+   - **Työpöytänäkymä (≥ 700px):** Ylävalikko otsikon vieressä (1. Koti, 2. Suosikit, 3. Asetukset).
+   - **Mobiilinäkymä (< 700px):** Alavalintanauha ruudun alareunassa: **Suosikit (vasemmalla) · Koti (keskellä) · Asetukset (oikealla)** safe-area-tuella.
 
-## Tuotantoversio (Build)
+4. **Pull-to-refresh & manuaalipäivitys:**
+   - Vedä etusivua alaspäin päivittääksesi uutiset milloin tahansa mobiilissa.
+   - Nopea `↻`-päivityspainike yläpalkissa.
+   - Automaattinen uutisten tarkistus aina kun sovellukseen palataan taustalta.
 
-```bash
-npm run build
-```
+5. **Teemat:**
+   - **Järjestelmä (Auto)** – mukautuu puhelimen / käyttöjärjestelmän tummaan tai vaaleaan tilaan reaaliajassa.
+   - **Vaalea**
+   - **Tumma**
 
-Tuotantoversio syntyy `dist/`-hakemistoon ja se on valmis julkaistavaksi esim. GitHub Pagesiin.
-
-### GitHub Actions -automaatio (valinnainen)
-
-Jos julkaiset sovelluksen GitHub Pagesiin, voit automatisoida uutisten noudon esim. 2 tunnin välein GitHub Actions -työnkululla (`.github/workflows/update-news.yml`):
-
-```yaml
-name: Update News
-on:
-  schedule:
-    - cron: '0 */2 * * *' # 2 tunnin välein
-  workflow_dispatch:
-
-jobs:
-  update-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm install
-      - run: npm run fetch:news
-      - run: npm run build
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-```
+6. **PWA & Offline:**
+   - Asennettavissa kotivalikkoon Androidilla, iOS:lla ja tietokoneella.
+   - Offline-tuki Service Workerin avulla.
 
 ---
 
-## Mitä pohjassa on?
+## Automaattipäivitys (GitHub Actions)
 
-- React + Vite
-- PWA / service worker `vite-plugin-pwa`:lla
-- Responsiivinen puhelin- ja tablet-näkymä
-- Suomi + englanti -kielisuodatus
-- Kategoriapalkki
-- Suosikit (tallentuvat selaimeen / localStorage)
-- Tumma tila
-- GitHub Pages -yhteensopivuus (`base: "./"`)
+Projektissa on valmis työnkulku [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), joka:
+- Noutaa uutiset automaattisesti **15 minuutin välein** (`cron: '*/15 * * * *'`).
+- Karsii duplikaatit, kääntää sovelluksen ja julkaisee sen suoraan GitHub Pagesiin.

@@ -28,15 +28,20 @@ button {
 .app-shell {
   width: min(100%, 960px);
   margin: 0 auto;
-  padding: 22px 18px 40px;
+  padding: 20px 18px 40px;
 }
 
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
-  padding: 10px 0 22px;
+  gap: 16px;
+  padding: 6px 0 18px;
+}
+
+.brand-group {
+  cursor: pointer;
+  user-select: none;
 }
 
 .eyebrow {
@@ -48,18 +53,18 @@ button {
 
 h1 {
   margin: 2px 0 0;
-  font-size: clamp(2rem, 6vw, 3rem);
-  line-height: 1;
+  font-size: clamp(1.85rem, 5.5vw, 2.75rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .refresh-button,
-.settings-button,
 .close-button {
   border: 0;
   border-radius: 12px;
@@ -92,11 +97,125 @@ h1 {
   }
 }
 
-.settings-button {
-  font-size: 1.4rem;
+/* =========================================================
+   PÄÄVALIKKO: TYÖPÖYTÄ (Ylävalikko) & MOBIILI (Alapalkki)
+   ========================================================= */
+
+/* 1. Työpöytänäkymän ylävalikko */
+.desktop-nav {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  background: #e7e7e7;
+  padding: 4px;
+  border-radius: 14px;
 }
 
-/* Pull-to-refresh container & indicator */
+.desktop-nav .nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.88rem;
+  font-weight: 550;
+  padding: 8px 14px;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.desktop-nav .nav-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.desktop-nav .nav-item.active {
+  background: white;
+  color: #111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.nav-badge {
+  background: #f59e0b;
+  color: #111;
+  font-size: 0.72rem;
+  font-weight: 750;
+  padding: 2px 6px;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+/* 2. Mobiilin alavalintanauha */
+.mobile-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 8px 16px max(10px, env(safe-area-inset-bottom));
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 550;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bottom-nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  line-height: 1;
+  margin-bottom: 3px;
+  transition: transform 0.15s ease;
+}
+
+.bottom-nav-icon-wrap .nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -10px;
+}
+
+.bottom-nav-item.active {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.bottom-nav-item.active .bottom-nav-icon-wrap {
+  transform: translateY(-2px) scale(1.12);
+  color: #2563eb;
+}
+
+/* Suosikit -ikonille aktiivisena kultainen korostus */
+.bottom-nav-item.active:first-child .bottom-nav-icon-wrap {
+  color: #f59e0b;
+}
+
+/* =========================================================
+   PULL-TO-REFRESH
+   ========================================================= */
 .pull-to-refresh-container {
   position: relative;
   min-height: 100vh;
@@ -148,18 +267,38 @@ h1 {
   animation: spin 0.7s linear infinite;
 }
 
+/* =========================================================
+   NÄKYMÄT & SISÄLTÖ
+   ========================================================= */
+.tab-view {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .intro {
-  padding: 18px 0 12px;
+  padding: 12px 0 10px;
 }
 
 .intro h2 {
   margin: 0 0 5px;
   font-size: 1.35rem;
+  letter-spacing: -0.01em;
 }
 
 .intro p {
   margin: 0;
   opacity: 0.65;
+  font-size: 0.92rem;
 }
 
 .category-bar {
@@ -179,8 +318,10 @@ h1 {
   border: 1px solid #d7d7d7;
   background: transparent;
   border-radius: 999px;
-  padding: 8px 13px;
+  padding: 7px 13px;
   color: inherit;
+  font-size: 0.85rem;
+  transition: all 0.12s ease;
 }
 
 .category-bar button.selected {
@@ -189,6 +330,36 @@ h1 {
   border-color: #171717;
 }
 
+/* Piilotettujen luettujen uutisten ilmoituspalkki */
+.hidden-read-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 9px 14px;
+  margin-bottom: 14px;
+  font-size: 0.84rem;
+  color: #475569;
+}
+
+.banner-toggle-button {
+  border: 1px solid #cbd5e1;
+  background: white;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   UUTISKORTIT
+   ========================================================= */
 .news-list {
   display: grid;
   gap: 14px;
@@ -215,6 +386,15 @@ h1 {
 .news-card:focus-visible {
   outline: 2px solid #171717;
   outline-offset: 2px;
+}
+
+/* Jo luettu uutinen */
+.news-card.is-read {
+  opacity: 0.85;
+}
+
+.news-card.is-read h2 {
+  opacity: 0.85;
 }
 
 .news-card-image-wrap {
@@ -246,12 +426,28 @@ h1 {
   gap: 10px;
 }
 
+.category-and-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .category {
   font-size: 0.75rem;
   font-weight: 700;
   opacity: 0.65;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.read-badge {
+  font-size: 0.68rem;
+  font-weight: 650;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 2px 7px;
+  border-radius: 6px;
 }
 
 .favorite-button {
@@ -302,18 +498,22 @@ h1 {
   font-weight: 650;
   text-decoration: none;
   padding-top: 4px;
+  font-size: 0.9rem;
 }
 
 .news-card a:hover {
   text-decoration: underline;
 }
 
+/* =========================================================
+   ASETUKSET -PANEELI
+   ========================================================= */
 .settings-panel {
   background: white;
   border: 1px solid #e2e2e2;
   border-radius: 18px;
-  padding: 20px;
-  margin-top: 12px;
+  padding: 22px;
+  margin-top: 6px;
 }
 
 .panel-header {
@@ -321,10 +521,27 @@ h1 {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  margin-bottom: 10px;
 }
 
 .panel-header h2 {
+  margin: 0 0 4px;
+}
+
+.settings-subtitle {
   margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.65;
+}
+
+.setting-group {
+  padding: 16px 0;
+  border-bottom: 1px solid #e7e7e7;
+}
+
+.setting-group h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
 }
 
 .setting-row {
@@ -332,27 +549,148 @@ h1 {
   justify-content: space-between;
   gap: 20px;
   align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid #e7e7e7;
+  padding: 12px 0 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
-.setting-group {
-  padding: 15px 0;
-  border-bottom: 1px solid #e7e7e7;
-}
-
-.setting-group h3 {
-  margin: 0 0 10px;
-  font-size: 1rem;
-}
-
-.setting-group label {
-  display: block;
-  padding: 7px 0;
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  cursor: pointer;
+  font-size: 0.92rem;
 }
 
 .muted {
   opacity: 0.65;
+  line-height: 1.5;
+  font-size: 0.88rem;
+  margin: 4px 0 12px;
+}
+
+/* Teemavalinta (Segmented control) */
+.theme-segmented-control {
+  display: flex;
+  gap: 6px;
+  background: #e7e7e7;
+  padding: 4px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.theme-chip {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 0.88rem;
+  font-weight: 550;
+  color: inherit;
+  transition: all 0.15s ease;
+}
+
+.theme-chip.active {
+  background: white;
+  color: #111;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Lukutilastojen laatikko */
+.read-stats-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.read-stats-number {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+  display: block;
+  color: #2563eb;
+}
+
+.read-stats-label {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+.action-button-secondary {
+  border: 1px solid #cbd5e1;
+  background: white;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: inherit;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.action-button-secondary:hover {
+  background: #f1f5f9;
+}
+
+.settings-footer-info {
+  padding-top: 20px;
+  font-size: 0.8rem;
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* =========================================================
+   TYHJÄT TILAT JA ILMOITUKSET
+   ========================================================= */
+.status-message {
+  padding: 30px 20px;
+  text-align: center;
+  opacity: 0.65;
+}
+
+.status-message.error {
+  color: #b42318;
+  opacity: 1;
+}
+
+.empty-feed,
+.empty-favorites {
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.empty-feed-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.empty-feed h3,
+.empty-favorites h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.empty-feed p,
+.empty-favorites p {
+  margin: 4px 0 16px;
+  max-width: 400px;
   line-height: 1.5;
 }
 
@@ -365,6 +703,9 @@ footer {
   opacity: 0.5;
 }
 
+/* =========================================================
+   TUMMA TILA (DARK MODE)
+   ========================================================= */
 .dark {
   color: #eeeeee;
   background: #111111;
@@ -393,13 +734,52 @@ footer {
   background: #252525;
 }
 
+.dark .desktop-nav,
+.dark .theme-segmented-control {
+  background: #242424;
+}
+
+.dark .desktop-nav .nav-item.active,
+.dark .theme-chip.active {
+  background: #111111;
+  color: #eeeeee;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.dark .mobile-bottom-nav {
+  background: rgba(17, 17, 17, 0.88);
+  border-top-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dark .bottom-nav-item {
+  color: #94a3b8;
+}
+
+.dark .bottom-nav-item.active {
+  color: #f8fafc;
+}
+
+.dark .bottom-nav-item.active .bottom-nav-icon-wrap {
+  color: #60a5fa;
+}
+
+.dark .bottom-nav-item.active:first-child .bottom-nav-icon-wrap {
+  color: #f59e0b;
+}
+
 .dark .category-bar button,
 .dark .refresh-button,
-.dark .settings-button,
 .dark .close-button {
   border-color: #383838;
   background: #242424;
   color: #eee;
+}
+
+.dark .category-bar button.selected {
+  background: #eee;
+  color: #111;
+  border-color: #eee;
 }
 
 .dark .pull-pill {
@@ -409,20 +789,59 @@ footer {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
 }
 
-.dark .category-bar button.selected {
-  background: #eee;
-  color: #111;
-  border-color: #eee;
-}
-
 .dark .setting-row,
 .dark .setting-group {
   border-color: #303030;
 }
 
+.dark .read-badge {
+  color: #34d399;
+  background: rgba(6, 78, 59, 0.35);
+}
+
+.dark .hidden-read-banner {
+  background: #1e1e1e;
+  border-color: #333333;
+  color: #94a3b8;
+}
+
+.dark .banner-toggle-button {
+  background: #272727;
+  border-color: #444444;
+}
+
+.dark .read-stats-box {
+  background: #1b1b1b;
+  border-color: #303030;
+}
+
+.dark .read-stats-number {
+  color: #60a5fa;
+}
+
+.dark .action-button-secondary {
+  background: #242424;
+  border-color: #383838;
+}
+
+.dark .action-button-secondary:hover {
+  background: #2d2d2d;
+}
+
+/* =========================================================
+   RESPONSIIVISUUS
+   ========================================================= */
 @media (min-width: 700px) {
   .app-shell {
-    padding-top: 38px;
+    padding-top: 28px;
+  }
+
+  .desktop-nav {
+    display: flex;
+  }
+
+  .mobile-bottom-nav {
+    display: none;
   }
 
   .news-list {
@@ -436,13 +855,8 @@ footer {
   }
 }
 
-.status-message {
-  padding: 30px 20px;
-  text-align: center;
-  opacity: 0.65;
-}
-
-.status-message.error {
-  color: #b42318;
-  opacity: 1;
+@media (max-width: 699px) {
+  .app-shell {
+    padding-bottom: 95px; /* Tilaa mobiilin alapalkille */
+  }
 }
