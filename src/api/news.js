@@ -8,43 +8,59 @@ import {
 
 const CACHE_KEY = "uutisapuri-live-news-cache";
 
-const CLIENT_FEEDS = [
-  {
-    name: "Ilta-Sanomat",
-    url: "https://www.is.fi/rss/tuoreimmat.xml",
-    language: "fi",
-    defaultCategory: "Uutiset",
-    maxItems: 14,
-    direct: true // Tukee CORS:ia suoraan selaimesta
-  },
+export const CLIENT_FEEDS = [
   {
     name: "Yle Uutiset",
     url: "https://yle.fi/rss/uutiset/tuoreimmat",
     language: "fi",
     defaultCategory: "Kotimaa",
-    maxItems: 14,
+    maxItems: 16,
     direct: false
   },
   {
-    name: "BBC Technology",
-    url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    name: "Helsingin Sanomat",
+    url: "https://www.hs.fi/rss/tuoreimmat.xml",
+    language: "fi",
+    defaultCategory: "Uutiset",
+    maxItems: 12,
+    direct: true // Tukee CORS:ia suoraan selaimesta
+  },
+  {
+    name: "Ilta-Sanomat",
+    url: "https://www.is.fi/rss/tuoreimmat.xml",
+    language: "fi",
+    defaultCategory: "Uutiset",
+    maxItems: 8,
+    direct: true // Tukee CORS:ia suoraan selaimesta
+  },
+  {
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
     language: "en",
-    defaultCategory: "Technology",
+    defaultCategory: "World",
     maxItems: 8,
     direct: false
   },
   {
-    name: "BBC Science",
-    url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
     language: "en",
-    defaultCategory: "Science",
+    defaultCategory: "Technology",
+    maxItems: 6,
+    direct: false
+  },
+  {
+    name: "The Guardian",
+    url: "https://www.theguardian.com/world/rss",
+    language: "en",
+    defaultCategory: "World",
     maxItems: 8,
     direct: false
   }
 ];
 
 /**
- * Parsii Ilta-Sanomat suorasta XML-syötteestä selaimessa
+ * Parsii suoran XML-syötteen (Ilta-Sanomat, Helsingin Sanomat) selaimessa
  */
 function parseRssXmlClient(xmlText, feedConfig) {
   const items = [];
@@ -124,7 +140,7 @@ function parseRss2JsonClient(data, feedConfig, existingMap = new Map()) {
 
     let published = new Date().toISOString();
     if (item.pubDate) {
-      // rss2json palauttaa UTC-ajan tyyliin "2026-11-15 18:56:42"
+      // rss2json palauttaa UTC-ajan tyyliin "2026-11-21 07:16:42"
       const dateStr =
         item.pubDate.includes("Z") || item.pubDate.includes("+")
           ? item.pubDate
@@ -145,11 +161,24 @@ function parseRss2JsonClient(data, feedConfig, existingMap = new Map()) {
       item.thumbnail ||
       item.enclosure?.thumbnail ||
       item.enclosure?.link ||
+      item.enclosure?.url ||
       null;
 
-    // Jos kuvaa ei ollut suoraan syötteessä, tarkistetaan löytyykö aiemmasta välimuistista
-    if (!imageUrl && existingMap.has(link)) {
-      imageUrl = existingMap.get(link).imageUrl || null;
+    if (imageUrl && typeof imageUrl === "string") {
+      imageUrl = decodeHtmlEntities(imageUrl);
+    }
+
+    // Jos kuvaa ei ollut suoraan syötteessä (kuten Yle), tarkistetaan löytyykö aiemmasta välimuistista
+    if (!imageUrl) {
+      const cleanLink = link.split("?")[0];
+      const match =
+        existingMap.get(link) ||
+        existingMap.get(cleanLink) ||
+        existingMap.get(guid) ||
+        existingMap.get(title.toLowerCase().trim());
+      if (match?.imageUrl) {
+        imageUrl = match.imageUrl;
+      }
     }
 
     items.push({
@@ -177,7 +206,7 @@ function parseRss2JsonClient(data, feedConfig, existingMap = new Map()) {
  */
 async function fetchSingleFeedClient(feedConfig, existingMap) {
   if (feedConfig.direct) {
-    // Suora haku (esim. Ilta-Sanomat tukee CORS-otsikoita)
+    // Suora haku (Ilta-Sanomat ja Helsingin Sanomat tukevat CORS-otsikoita)
     const res = await fetch(feedConfig.url, {
       cache: "no-store",
       signal: AbortSignal.timeout(6000)
@@ -187,7 +216,7 @@ async function fetchSingleFeedClient(feedConfig, existingMap) {
     return parseRssXmlClient(xmlText, feedConfig);
   }
 
-  // Yle & BBC haetaan rss2json-välityksen kautta
+  // Yle, BBC ja Guardian haetaan rss2json-välityksen kautta
   const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedConfig.url)}`;
   const res = await fetch(proxyUrl, {
     cache: "no-store",
@@ -206,7 +235,12 @@ export async function fetchLiveNews(existingArticles = []) {
   const existingMap = new Map();
   if (Array.isArray(existingArticles)) {
     for (const art of existingArticles) {
-      if (art.url) existingMap.set(art.url, art);
+      if (art.url) {
+        existingMap.set(art.url, art);
+        existingMap.set(art.url.split("?")[0], art);
+      }
+      if (art.id) existingMap.set(art.id, art);
+      if (art.title) existingMap.set(art.title.toLowerCase().trim(), art);
     }
   }
 

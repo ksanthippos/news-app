@@ -14,10 +14,19 @@ import {
   getReadCount
 } from "./utils/readHistory";
 
+const DEFAULT_SOURCES = [
+  "Yle Uutiset",
+  "Helsingin Sanomat",
+  "Ilta-Sanomat",
+  "BBC News",
+  "The Guardian"
+];
+
 const defaultSettings = {
   theme: "system", // "system" | "light" | "dark"
   darkMode: false,
   languages: ["fi", "en"],
+  sources: DEFAULT_SOURCES,
   notifications: false,
   hideReadNews: true
 };
@@ -38,11 +47,26 @@ function loadSettings() {
       ...defaultSettings,
       ...parsed,
       theme,
+      sources: Array.isArray(parsed.sources) ? parsed.sources : DEFAULT_SOURCES,
       hideReadNews: parsed.hideReadNews !== undefined ? parsed.hideReadNews : true
     };
   } catch {
     return defaultSettings;
   }
+}
+
+function isSourceAllowed(articleSource, enabledSources) {
+  if (!Array.isArray(enabledSources) || enabledSources.length === 0) {
+    return true;
+  }
+  if (!articleSource) return false;
+
+  return enabledSources.some((src) => {
+    if (src === "BBC News") {
+      return articleSource.includes("BBC");
+    }
+    return articleSource.includes(src);
+  });
 }
 
 function loadFavorites() {
@@ -214,11 +238,16 @@ export default function App() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [settings.theme]);
 
-  // Kategoriat (vain tuoreista uutisista, ei duplikaatteja)
+  // Kategoriat (vain valituista uutislähteistä)
   const categories = useMemo(() => {
-    const values = new Set(news.map((article) => article.category).filter(Boolean));
+    const sourceAllowedNews = news.filter((article) =>
+      isSourceAllowed(article.source, settings.sources)
+    );
+    const values = new Set(
+      sourceAllowedNews.map((article) => article.category).filter(Boolean)
+    );
     return ["Kaikki", ...values];
-  }, [news]);
+  }, [news, settings.sources]);
 
   // Uutisen merkitseminen luetuksi
   const handleMarkRead = (article) => {
@@ -246,6 +275,10 @@ export default function App() {
     let hiddenCount = 0;
 
     const filtered = news.filter((article) => {
+      // Tarkistetaan uutislähde
+      const sourceOk = isSourceAllowed(article.source, settings.sources);
+      if (!sourceOk) return false;
+
       const languageOk = settings.languages.includes(article.language);
       const categoryOk = category === "Kaikki" || article.category === category;
       if (!languageOk || !categoryOk) return false;
@@ -268,6 +301,7 @@ export default function App() {
   }, [
     news,
     category,
+    settings.sources,
     settings.languages,
     settings.hideReadNews,
     readHistory,

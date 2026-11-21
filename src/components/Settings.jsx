@@ -1,6 +1,44 @@
 import { useState } from "react";
 import { APP_VERSION, VERSION_HISTORY } from "../config";
 
+export const AVAILABLE_SOURCES = [
+  {
+    id: "yle",
+    name: "Yle Uutiset",
+    description: "Ylen tuoreimmat uutiset, kotimaa ja maailma",
+    language: "fi",
+    flag: "🇫🇮"
+  },
+  {
+    id: "hs",
+    name: "Helsingin Sanomat",
+    description: "HS:n tuoreimmat uutiset, talous ja yhteiskunta",
+    language: "fi",
+    flag: "🇫🇮"
+  },
+  {
+    id: "is",
+    name: "Ilta-Sanomat",
+    description: "Päivän puheenaiheet, ilmiöt ja uutiset",
+    language: "fi",
+    flag: "🇫🇮"
+  },
+  {
+    id: "bbc",
+    name: "BBC News",
+    description: "Kansainväliset uutiset ja teknologia (English)",
+    language: "en",
+    flag: "🇬🇧"
+  },
+  {
+    id: "guardian",
+    name: "The Guardian",
+    description: "Maailmanlaajuiset uutiset ja analyysit (English)",
+    language: "en",
+    flag: "🌍"
+  }
+];
+
 export default function Settings({
   settings,
   setSettings,
@@ -9,15 +47,6 @@ export default function Settings({
   onBackToHome
 }) {
   const [showVersionHistory, setShowVersionHistory] = useState(false);
-
-  const toggleLanguage = (language) => {
-    setSettings((current) => ({
-      ...current,
-      languages: current.languages.includes(language)
-        ? current.languages.filter((x) => x !== language)
-        : [...current.languages, language]
-    }));
-  };
 
   const currentTheme = settings.theme || (settings.darkMode ? "dark" : "system");
 
@@ -28,6 +57,47 @@ export default function Settings({
       darkMode: theme === "dark"
     }));
   };
+
+  const toggleSource = (sourceName) => {
+    setSettings((current) => {
+      const currentSources = Array.isArray(current.sources)
+        ? current.sources
+        : AVAILABLE_SOURCES.map((s) => s.name);
+
+      const isEnabled = currentSources.includes(sourceName);
+
+      // Estetään poistamasta aivan kaikkia lähteitä (vähintään 1 säilytetään aina)
+      if (isEnabled && currentSources.length === 1) {
+        return current;
+      }
+
+      const nextSources = isEnabled
+        ? currentSources.filter((s) => s !== sourceName)
+        : [...currentSources, sourceName];
+
+      // Päivitetään kielet automaattisesti valittujen lähteiden mukaan
+      const hasFi = nextSources.some((s) =>
+        AVAILABLE_SOURCES.find((src) => src.name === s && src.language === "fi")
+      );
+      const hasEn = nextSources.some((s) =>
+        AVAILABLE_SOURCES.find((src) => src.name === s && src.language === "en")
+      );
+
+      const nextLanguages = [];
+      if (hasFi) nextLanguages.push("fi");
+      if (hasEn) nextLanguages.push("en");
+
+      return {
+        ...current,
+        sources: nextSources,
+        languages: nextLanguages.length > 0 ? nextLanguages : current.languages
+      };
+    });
+  };
+
+  const activeSources = Array.isArray(settings.sources)
+    ? settings.sources
+    : AVAILABLE_SOURCES.map((s) => s.name);
 
   return (
     <section className="settings-panel">
@@ -85,6 +155,60 @@ export default function Settings({
         </div>
       </div>
 
+      {/* Uutislähteet */}
+      <div className="setting-group">
+        <h3>Uutislähteet</h3>
+        <p className="muted">
+          Valitse mitkä mediat näytetään uutisvirrassasi. Voit kytkeä lähteitä vapaasti päälle tai pois.
+        </p>
+
+        <div className="sources-list">
+          <div className="sources-section-title">Kotimaiset mediat</div>
+          {AVAILABLE_SOURCES.filter((s) => s.language === "fi").map((src) => {
+            const isChecked = activeSources.includes(src.name);
+            return (
+              <label key={src.id} className="source-item">
+                <div className="source-item-left">
+                  <span className="source-item-flag">{src.flag}</span>
+                  <div className="source-item-text">
+                    <span className="source-item-name">{src.name}</span>
+                    <span className="source-item-desc">{src.description}</span>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleSource(src.name)}
+                />
+              </label>
+            );
+          })}
+
+          <div className="sources-section-title" style={{ marginTop: "14px" }}>
+            Kansainväliset mediat
+          </div>
+          {AVAILABLE_SOURCES.filter((s) => s.language === "en").map((src) => {
+            const isChecked = activeSources.includes(src.name);
+            return (
+              <label key={src.id} className="source-item">
+                <div className="source-item-left">
+                  <span className="source-item-flag">{src.flag}</span>
+                  <div className="source-item-text">
+                    <span className="source-item-name">{src.name}</span>
+                    <span className="source-item-desc">{src.description}</span>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleSource(src.name)}
+                />
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Lukuhistoria ja luettujen piilotus */}
       <div className="setting-group">
         <h3>Luetut uutiset</h3>
@@ -122,27 +246,6 @@ export default function Settings({
             </button>
           )}
         </div>
-      </div>
-
-      {/* Kielet */}
-      <div className="setting-group">
-        <h3>Kielet</h3>
-        <label className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={settings.languages.includes("fi")}
-            onChange={() => toggleLanguage("fi")}
-          />
-          <span>Suomi (Yle, Ilta-Sanomat)</span>
-        </label>
-        <label className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={settings.languages.includes("en")}
-            onChange={() => toggleLanguage("en")}
-          />
-          <span>English (BBC)</span>
-        </label>
       </div>
 
       {/* Versiohistoria */}

@@ -647,6 +647,91 @@ h1 {
   background: #f1f5f9;
 }
 
+/* Uutislähteet asetuksissa */
+.sources-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.sources-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.65;
+  margin: 6px 0 8px;
+}
+
+.source-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.source-item:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.source-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.source-item-flag {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.source-item-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.source-item-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.source-item-desc {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.source-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #2563eb;
+  flex-shrink: 0;
+}
+
+:root.dark .source-item {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:root.dark .source-item:hover {
+  background: #243248;
+  border-color: #475569;
+}
+
 .settings-footer-info {
   padding-top: 20px;
   font-size: 0.8rem;

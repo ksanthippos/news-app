@@ -19,30 +19,46 @@ const FEEDS = [
     url: "https://yle.fi/rss/uutiset/tuoreimmat",
     language: "fi",
     defaultCategory: "Kotimaa",
-    maxItems: 14,
+    maxItems: 16,
     fetchOgImageIfMissing: true
+  },
+  {
+    name: "Helsingin Sanomat",
+    url: "https://www.hs.fi/rss/tuoreimmat.xml",
+    language: "fi",
+    defaultCategory: "Uutiset",
+    maxItems: 12,
+    fetchOgImageIfMissing: false
   },
   {
     name: "Ilta-Sanomat",
     url: "https://www.is.fi/rss/tuoreimmat.xml",
     language: "fi",
     defaultCategory: "Uutiset",
-    maxItems: 14,
-    fetchOgImageIfMissing: false
-  },
-  {
-    name: "BBC Technology",
-    url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
-    language: "en",
-    defaultCategory: "Technology",
     maxItems: 8,
     fetchOgImageIfMissing: false
   },
   {
-    name: "BBC Science",
-    url: "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
     language: "en",
-    defaultCategory: "Science",
+    defaultCategory: "World",
+    maxItems: 8,
+    fetchOgImageIfMissing: false
+  },
+  {
+    name: "BBC News",
+    url: "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    language: "en",
+    defaultCategory: "Technology",
+    maxItems: 6,
+    fetchOgImageIfMissing: false
+  },
+  {
+    name: "The Guardian",
+    url: "https://www.theguardian.com/world/rss",
+    language: "en",
+    defaultCategory: "World",
     maxItems: 8,
     fetchOgImageIfMissing: false
   }
